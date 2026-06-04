@@ -1,22 +1,23 @@
 <?php
-// כתובת ה-API מהקוד הישן
 $real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php";
 $inputJSON = file_get_contents('php://input');
 
-// משיכת ההדרים כפי שמתבצע בקוד החדש (ללא בדיקה מקומית)
 $client_timestamp = $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
 $client_signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
 
-$ch = curl_init($real_api_url);
+// משיכת סוד פנימי מתוך משתני הסביבה של Render (הסוד לא שמור בקוד!)
+$gateway_secret = getenv('RENDER_GATEWAY_SECRET'); 
 
-// משיכת כתובת ה-IP כפי שמתבצע בקוד החדש
 $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+
+$ch = curl_init($real_api_url);
 
 $forward_headers = [
     "Content-Type: application/json",
     "X-Timestamp: " . $client_timestamp,
     "X-Signature: " . $client_signature,
-    "X-Forwarded-For: " . $client_ip
+    "X-Forwarded-For: " . $client_ip,
+    "X-Gateway-Auth: " . $gateway_secret // מעביר את הסוד לשרת הסופי
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -32,7 +33,6 @@ curl_close($ch);
 http_response_code($http_code);
 header('Content-Type: application/json; charset=utf-8');
 
-// טיפול בשגיאות כפי שמתבצע בקוד החדש
 if ($response === false) {
     echo json_encode(["status" => "error", "message" => "Gateway Error: " . $curl_error]);
 } else {
