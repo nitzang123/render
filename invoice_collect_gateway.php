@@ -5,10 +5,9 @@ $inputJSON = file_get_contents('php://input');
 $client_timestamp = $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
 $client_signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
 $gateway_auth = $_SERVER['HTTP_X_GATEWAY_AUTH'] ?? '';
+$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 
 $ch = curl_init($real_api_url);
-
-$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 
 $forward_headers = [
     "Content-Type: application/json",
