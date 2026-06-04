@@ -4,20 +4,18 @@ $inputJSON = file_get_contents('php://input');
 
 $client_timestamp = $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
 $client_signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
-
-// משיכת סוד פנימי מתוך משתני הסביבה של Render (הסוד לא שמור בקוד!)
-$gateway_secret = getenv('RENDER_GATEWAY_SECRET'); 
-
-$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+$gateway_auth = $_SERVER['HTTP_X_GATEWAY_AUTH'] ?? '';
 
 $ch = curl_init($real_api_url);
+
+$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 
 $forward_headers = [
     "Content-Type: application/json",
     "X-Timestamp: " . $client_timestamp,
     "X-Signature: " . $client_signature,
     "X-Forwarded-For: " . $client_ip,
-    "X-Gateway-Auth: " . $gateway_secret // מעביר את הסוד לשרת הסופי
+    "X-Gateway-Auth: " . $gateway_auth
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
