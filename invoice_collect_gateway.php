@@ -5,6 +5,7 @@ $client_timestamp = $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
 $client_signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
 $gateway_auth = $_SERVER['HTTP_X_GATEWAY_AUTH'] ?? '';
 $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'SmartCollector/1.0';
 
 $real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php?gw_auth=" . urlencode($gateway_auth);
 
@@ -14,7 +15,8 @@ $forward_headers = [
     "Content-Type: application/json",
     "X-Timestamp: " . $client_timestamp,
     "X-Signature: " . $client_signature,
-    "X-Forwarded-For: " . $client_ip
+    "X-Forwarded-For: " . $client_ip,
+    "User-Agent: " . $user_agent
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
