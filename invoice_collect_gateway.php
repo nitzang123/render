@@ -9,7 +9,6 @@ if (!isset($config['gateway_token']) || !isset($config['main_server_token'])) {
 $real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php";
 $inputJSON = file_get_contents('php://input');
 
-// שאיבה בטוחה של ה-Headers כדי שלא יאבדו בשרת החדש
 $headers = function_exists('apache_request_headers') ? apache_request_headers() : [];
 $client_timestamp = $headers['X-Timestamp'] ?? $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
 $client_signature = $headers['X-Signature'] ?? $_SERVER['HTTP_X_SIGNATURE'] ?? '';
@@ -24,14 +23,12 @@ if (abs(time() - (int)$client_timestamp) > 60) {
     exit;
 }
 
-// 1. אימות חתימה מול הפייתון (Gateway Secret)
 $expected_gateway_sig = hash_hmac('sha256', $client_timestamp, trim($config['gateway_token']));
 if (!hash_equals($expected_gateway_sig, $client_signature)) {
     http_response_code(403);
     exit;
 }
 
-// 2. יצירת חתימה חדשה מול השרת הראשי (API Token)
 $new_timestamp = time();
 $new_signature = hash_hmac('sha256', $new_timestamp, trim($config['main_server_token']));
 
