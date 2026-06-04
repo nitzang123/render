@@ -1,4 +1,3 @@
-// invoice_collect_gateway.php
 <?php
 $config = include 'hagdarot_gateway.php';
 
@@ -10,33 +9,32 @@ if (!isset($config['gateway_token']) || !isset($config['main_server_token'])) {
 $real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php";
 $inputJSON = file_get_contents('php://input');
 
-// ב-PHP מודרני מומלץ להשתמש ב-$_SERVER עבור כותרות מותאמות אישית, או ב-getallheaders()
-$client_timestamp = $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
-$client_signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
+// שאיבה בטוחה של ה-Headers כדי שלא יאבדו בשרת החדש
+$headers = function_exists('apache_request_headers') ? apache_request_headers() : [];
+$client_timestamp = $headers['X-Timestamp'] ?? $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
+$client_signature = $headers['X-Signature'] ?? $_SERVER['HTTP_X_SIGNATURE'] ?? '';
 
 if (empty($client_timestamp) || empty($client_signature)) {
     http_response_code(401);
     exit;
 }
 
-// 1. בדיקת תוקף זמן (למנוע Replay Attacks)
 if (abs(time() - (int)$client_timestamp) > 60) {
     http_response_code(401);
     exit;
 }
 
-// 2. אימות החתימה מול הפייתון (בעזרת הסוד של ה-Gateway)
+// 1. אימות חתימה מול הפייתון (Gateway Secret)
 $expected_gateway_sig = hash_hmac('sha256', $client_timestamp, trim($config['gateway_token']));
 if (!hash_equals($expected_gateway_sig, $client_signature)) {
     http_response_code(403);
     exit;
 }
 
-// 3. יצירת חתימה חדשה עבור השרת הראשי (בעזרת הסוד של השרת הראשי)
+// 2. יצירת חתימה חדשה מול השרת הראשי (API Token)
 $new_timestamp = time();
 $new_signature = hash_hmac('sha256', $new_timestamp, trim($config['main_server_token']));
 
-// 4. שליחת הבקשה המאומתת לשרת הראשי
 $ch = curl_init($real_api_url);
 $forward_headers = [
     "Content-Type: application/json",
