@@ -3,7 +3,7 @@
 $gateway_token = 'XXXXX'; 
 
 // 2. הטוקן שהשרת שלך משתמש בו (חייב להיות זהה ל- api_token בקובץ hagdarot.php)
-$main_server_token = 'G%%$o4uDVp9%f9bh9$1g_!'; 
+$main_server_token = 'XXXX'; 
 
 $real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php";
 
