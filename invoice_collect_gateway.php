@@ -1,22 +1,37 @@
 <?php
-$inputJSON = file_get_contents('php://input');
+$gateway_token = getenv('GATEWAY_TOKEN') ?: 'XXXXX';
+$main_server_token = getenv('MAIN_SERVER_TOKEN') ?: 'YYYYY';
+$real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php";
 
+$inputJSON = file_get_contents('php://input');
 $client_timestamp = $_SERVER['HTTP_X_TIMESTAMP'] ?? '';
 $client_signature = $_SERVER['HTTP_X_SIGNATURE'] ?? '';
-$gateway_auth = $_SERVER['HTTP_X_GATEWAY_AUTH'] ?? '';
-$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'SmartCollector/1.0';
 
-$real_api_url = "https://love-marriage.co.il/meet/pdf/invoice_collect_api.php?gw_auth=" . urlencode($gateway_auth);
+if (empty($client_timestamp) || empty($client_signature)) {
+    http_response_code(401);
+    exit;
+}
+
+if (abs(time() - (int)$client_timestamp) > 60) {
+    http_response_code(401);
+    exit;
+}
+
+$expected_gateway_sig = hash_hmac('sha256', $client_timestamp, trim($gateway_token));
+if (!hash_equals($expected_gateway_sig, $client_signature)) {
+    http_response_code(403);
+    exit;
+}
+
+$new_timestamp = (string)time();
+$new_signature = hash_hmac('sha256', $new_timestamp, trim($main_server_token));
 
 $ch = curl_init($real_api_url);
-
 $forward_headers = [
     "Content-Type: application/json",
-    "X-Timestamp: " . $client_timestamp,
-    "X-Signature: " . $client_signature,
-    "X-Forwarded-For: " . $client_ip,
-    "User-Agent: " . $user_agent
+    "X-Timestamp: " . $new_timestamp,
+    "X-Signature: " . $new_signature,
+    "X-Forwarded-For: " . ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '')
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -30,10 +45,5 @@ curl_close($ch);
 
 http_response_code($http_code);
 header('Content-Type: application/json; charset=utf-8');
-
-if ($response === false) {
-    echo json_encode(["status" => "error", "message" => "Gateway Error"]);
-} else {
-    echo $response;
-}
+echo $response;
 ?>
