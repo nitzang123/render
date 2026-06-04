@@ -23,7 +23,9 @@ if (abs(time() - (int)$client_timestamp) > 60) {
     exit;
 }
 
-$expected_gateway_sig = hash_hmac('sha256', $client_timestamp, trim($config['gateway_token']));
+$message = $client_timestamp . $inputJSON;
+$expected_gateway_sig = hash_hmac('sha256', $message, trim($config['gateway_token']));
+
 if (!hash_equals($expected_gateway_sig, $client_signature)) {
     http_response_code(403);
     exit;
