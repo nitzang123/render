@@ -1,11 +1,10 @@
 <?php
 /**
  * GATEWAY API - משמש כתווך בין Python ל-Server הראשי
- * 
- * זרימה:
+ * * זרימה:
  * 1. Python שולח בקשה עם X-Timestamp + X-Signature
- * 2. Gateway מוודא את החתימה עם gateway_token
- * 3. Gateway יוצר חתימה חדשה עם main_server_token
+ * 2. Gateway מוודא את החתימה עם GATEWAY_TOKEN מתוך משתני סביבה
+ * 3. Gateway יוצר חתימה חדשה עם MAIN_SERVER_TOKEN מתוך משתני סביבה
  * 4. Gateway מעביר לשרת הראשי
  */
 
@@ -14,11 +13,12 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 // ============================================
-// 1. טען את ההגדרות מ-hagdarot_gateway.php
+// 1. טען את ההגדרות ממשתני סביבה (Environment Variables)
 // ============================================
-$config = include 'hagdarot_gateway.php';
+$gateway_token = getenv('GATEWAY_TOKEN') ?: $_ENV['GATEWAY_TOKEN'] ?? $_SERVER['GATEWAY_TOKEN'] ?? '';
+$main_server_token = getenv('MAIN_SERVER_TOKEN') ?: $_ENV['MAIN_SERVER_TOKEN'] ?? $_SERVER['MAIN_SERVER_TOKEN'] ?? '';
 
-if (!isset($config['gateway_token']) || !isset($config['main_server_token'])) {
+if (!$gateway_token || !$main_server_token) {
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Gateway configuration error"]);
     exit;
@@ -43,7 +43,7 @@ if (empty($client_timestamp) || empty($client_signature)) {
 }
 
 // ============================================
-// 4. בדוק שהzaman לא עבר (לא יותר מ-60 שניות)
+// 4. בדוק שהזמן לא עבר (לא יותר מ-60 שניות)
 // ============================================
 if (abs(time() - (int)$client_timestamp) > 60) {
     http_response_code(401);
@@ -59,7 +59,7 @@ $message = $client_timestamp . $inputJSON;
 $expected_gateway_sig = hash_hmac(
     'sha256',
     $message,
-    trim($config['gateway_token'])
+    trim($gateway_token)
 );
 
 // ============================================
@@ -81,7 +81,7 @@ $new_message = $new_timestamp . $inputJSON;  // timestamp חדש + JSON
 $new_signature = hash_hmac(
     'sha256',
     $new_message,
-    trim($config['main_server_token'])
+    trim($main_server_token)
 );
 
 // ============================================
@@ -110,7 +110,7 @@ $curl_error = curl_error($ch);
 curl_close($ch);
 
 // ============================================
-// 9. החזר את התוצאה לבחזור ל-Python
+// 9. החזר את התוצאה בחזרה ל-Python
 // ============================================
 http_response_code($http_code);
 header('Content-Type: application/json; charset=utf-8');
@@ -123,5 +123,4 @@ if ($response === false) {
 } else {
     echo $response;
 }
-
 ?>
