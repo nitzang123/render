@@ -1,7 +1,7 @@
 <?php
 // משיכת הטוקנים ממשתני הסביבה (Environment Variables) ב-Render
-$gateway_token = getenv('GATEWAY_TOKEN');
-$main_server_token = getenv('MAIN_SERVER_TOKEN');
+$gateway_token = getenv('GATEWAY_TOKEN') ?: $_ENV['GATEWAY_TOKEN'] ?? $_SERVER['GATEWAY_TOKEN'] ?? '';
+$main_server_token = getenv('MAIN_SERVER_TOKEN') ?: $_ENV['MAIN_SERVER_TOKEN'] ?? $_SERVER['MAIN_SERVER_TOKEN'] ?? '';
 
 if (!$gateway_token || !$main_server_token) {
     http_response_code(500);
