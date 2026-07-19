@@ -8,7 +8,7 @@ from PIL import Image
 app = Flask(__name__)
 
 # מפתח אבטחה שנגדיר ב-Render וב-PHP
-API_KEY = os.environ.get("RENDER_API_KEY", "my_super_secret_key")
+API_KEY = os.environ.get("RENDER_API_KEY", "NitzanG_SuperSecretKey_2026resize")
 
 # שמירת סטטוס של משימות (בזיכרון השרת)
 jobs_status = {}
